@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fechamento de Caixa</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--mut:#94a3b8;--pri:#3b82f6;--ok:#16a34a;--bad:#dc2626}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{background:var(--bg);color:var(--txt);min-height:100vh}
+.hide{display:none!important}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line)}
+header h1{font-size:18px}
+.user{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--mut)}
+.user img{width:32px;height:32px;border-radius:50%}
+main{max-width:900px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+.card h2{font-size:16px;margin-bottom:14px;color:#cbd5e1}
+#login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:18px;text-align:center;padding:20px}
+#login .card{max-width:420px;width:100%}
+#login p{color:var(--mut);font-size:14px;margin-bottom:16px}
+.err{color:#f87171;font-size:13px;margin-top:10px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>div{flex:1;min-width:150px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+input,select{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:#0f172a;color:var(--txt);font-size:15px}
+.turnos{display:flex;gap:8px}
+.turnos button{flex:1;padding:12px;border-radius:9px;border:1px solid var(--line);background:#0f172a;color:var(--txt);cursor:pointer;font-weight:600}
+.turnos button.on{background:var(--pri);border-color:var(--pri)}
+.dirs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.dir{border:1px solid var(--line);border-radius:12px;padding:14px;background:#0f172a}
+.dir h3{font-size:14px;margin-bottom:4px}
+.dir small{display:block;color:var(--mut);font-size:11px;margin-bottom:10px;min-height:28px}
+.itens .it{display:flex;gap:6px;margin-bottom:6px}
+.itens .it input{padding:8px;font-size:14px}
+.itens .it button{background:transparent;border:1px solid var(--line);color:#f87171;border-radius:7px;padding:0 9px;cursor:pointer}
+.add{width:100%;padding:7px;border:1px dashed var(--line);background:transparent;color:var(--mut);border-radius:7px;cursor:pointer;font-size:12px}
+.sub{margin-top:8px;font-weight:700;text-align:right}
+.calc{background:#172033}
+.big{font-size:22px;font-weight:800;margin-top:6px}
+#resultado{border-radius:14px;padding:22px;text-align:center;margin-bottom:18px;transition:.3s}
+#resultado.pos{background:rgba(22,163,74,.15);border:2px solid var(--ok);color:#4ade80}
+#resultado.neg{background:rgba(220,38,38,.15);border:2px solid var(--bad);color:#f87171}
+#resultado.neu{background:var(--card);border:2px solid var(--line);color:var(--mut)}
+#resultado .big{font-size:34px}
+.btn{padding:13px 20px;border-radius:10px;border:none;background:var(--pri);color:#fff;font-weight:700;cursor:pointer;font-size:15px}
+.btn.sec{background:transparent;border:1px solid var(--line);color:var(--txt)}
+.btn.ok{background:var(--ok)}
+.tabs{display:flex;gap:8px;margin-bottom:18px}
+.tabs button{flex:1}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal div{text-align:center;padding:10px 0;border-radius:8px;font-size:14px}
+.cal .wd{color:var(--mut);font-size:11px}
+.cal .d{background:#0f172a;cursor:pointer;border:1px solid var(--line);position:relative}
+.cal .d.today{border-color:var(--pri)}
+.cal .d.sel{background:var(--pri)}
+.cal .dot{display:flex;gap:2px;justify-content:center;margin-top:3px}
+.cal .dot i{width:6px;height:6px;border-radius:50%}
+.hist{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:10px;border-left-width:6px}
+.hist.pos{border-left-color:var(--ok)}.hist.neg{border-left-color:var(--bad)}
+.hist table{width:100%;font-size:14px;margin-top:8px}
+.hist td{padding:3px 0}.hist td:last-child{text-align:right}
+.lock{font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+
+<section id="login">
+  <div class="card">
+    <h1 style="margin-bottom:8px">💰 Fechamento de Caixa</h1>
+    <p>Para continuar, faça o cadastro/login com sua conta Gmail.<br>O acesso é obrigatório.</p>
+    <div id="gbtn" style="display:flex;justify-content:center"></div>
+    <div id="loginErr" class="err"></div>
+  </div>
+</section>
+
+<section id="app" class="hide">
+<header>
+  <h1>💰 Fechamento de Caixa</h1>
+  <div class="user"><img id="uPic" alt=""><span id="uMail"></span><button class="btn sec" style="padding:6px 10px;font-size:12px" onclick="sair()">Sair</button></div>
+</header>
+<main>
+  <div class="tabs">
+    <button class="btn" id="tCaixa" onclick="aba('caixa')">Caixa</button>
+    <button class="btn sec" id="tCal" onclick="aba('cal')">Calendário</button>
+  </div>
+
+  <div id="vCaixa">
+    <div class="card">
+      <h2>Turno do caixa</h2>
+      <div class="row" style="margin-bottom:14px">
+        <div><label>Data (automática)</label><input id="data" readonly></div>
+      </div>
+      <label>Turno</label>
+      <div class="turnos" style="margin-bottom:14px">
+        <button data-t="T1" onclick="turno('T1')">T1 - Manhã</button>
+        <button data-t="T2" onclick="turno('T2')">T2 - Tarde</button>
+        <button data-t="T3" onclick="turno('T3')">T3 - Noite</button>
+      </div>
+      <div class="row">
+        <div><label>Horário de início</label><input type="time" id="hIni"></div>
+        <div><label>Horário de finalização</label><input type="time" id="hFim"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Diretórios da contabilidade</h2>
+      <div class="dirs">
+        <div class="dir"><h3>💵 Sangria</h3><small>Dinheiro de coleta, cédulas vivas</small>
+          <div class="itens" id="i-sangria"></div><button class="add" onclick="addIt('sangria')">+ adicionar valor</button>
+          <div class="sub" id="s-sangria">R$ 0,00</div></div>
+        <div class="dir"><h3>💳 Máquina</h3><small>Relatório de fechamento da máquina ou soma de boletos</small>
+          <div class="itens" id="i-maquina"></div><button class="add" onclick="addIt('maquina')">+ adicionar valor</button>
+          <div class="sub" id="s-maquina">R$ 0,00</div></div>
+        <div class="dir"><h3>📄 Relatório</h3><small>Relatório do sistema, soma total de vendas do dia</small>
+          <div class="itens" id="i-relatorio"></div><button class="add" onclick="addIt('relatorio')">+ adicionar valor</button>
+          <div class="sub" id="s-relatorio">R$ 0,00</div></div>
+        <div class="dir calc"><h3>🧮 Venda</h3><small>Sangria + Máquina (junção automática)</small>
+          <div class="big" id="vVenda">R$ 0,00</div></div>
+      </div>
+    </div>
+
+    <div id="resultado" class="neu">
+      <div style="font-size:13px;text-transform:uppercase;letter-spacing:1px">Total (Venda − Relatório)</div>
+      <div class="big" id="vTotal">R$ 0,00</div>
+      <div id="vStatus" style="margin-top:6px;font-weight:600">Aguardando fechamento</div>
+    </div>
+
+    <div class="row">
+      <button class="btn sec" onclick="limpar()">Limpar</button>
+      <button class="btn ok" style="flex:2" onclick="fechar()">✔ Fechar e salvar caixa</button>
+    </div>
+  </div>
+
+  <div id="vCal" class="hide">
+    <div class="card">
+      <div class="cal-head">
+        <button class="btn sec" onclick="mes(-1)">‹</button>
+        <h2 id="calTit" style="margin:0"></h2>
+        <button class="btn sec" onclick="mes(1)">›</button>
+      </div>
+      <div class="cal" id="cal"></div>
+    </div>
+    <div class="card"><h2 id="diaTit">Selecione um dia</h2><div id="diaLista"></div></div>
+  </div>
+</main>
+</section>
+
+<script>
+/* Cole aqui o seu Client ID OAuth do Google */
+const GOOGLE_CLIENT_ID = "COLE_SEU_CLIENT_ID.apps.googleusercontent.com";
+
+const DIRS=['sangria','maquina','relatorio'];
+const TURNOS={T1:'Manhã',T2:'Tarde',T3:'Noite'};
+const PADRAO={T1:['06:00','14:00'],T2:['14:00','22:00'],T3:['22:00','06:00']};
+let user=null, turnoAtual=null, calRef=new Date(), diaSel=null;
+
+const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const num=s=>{if(!s)return 0;s=String(s).replace(/[R$\s]/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n};
+const hojeISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtData=iso=>iso.split('-').reverse().join('/');
+const KEY=()=>'caixa_'+user.email;
+const db=()=>JSON.parse(localStorage.getItem(KEY())||'{}');
+const salvarDb=d=>localStorage.setItem(KEY(),JSON.stringify(d));
+
+function decodeJwt(t){const p=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(atob(p).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')))}
+function onGoogle(resp){
+  const info=decodeJwt(resp.credential);
+  if(!info.email||!info.email_verified||!/@gmail\.com$/i.test(info.email)){
+    document.getElementById('loginErr').textContent='Acesso permitido apenas com conta @gmail.com verificada.';return;}
+  user={email:info.email,nome:info.name,foto:info.picture};
+  const cad=JSON.parse(localStorage.getItem('cadastros')||'{}');
+  if(!cad[user.email])cad[user.email]={...user,criadoEm:new Date().toISOString()};
+  localStorage.setItem('cadastros',JSON.stringify(cad));
+  sessionStorage.setItem('sessao',JSON.stringify(user));
+  entrar();
+}
+function initGoogle(){
+  if(!window.google||!google.accounts){return setTimeout(initGoogle,200)}
+  if(GOOGLE_CLIENT_ID.startsWith('COLE_')){document.getElementById('loginErr').textContent='Configure o GOOGLE_CLIENT_ID no código para ativar o login com Gmail.';}
+  google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle});
+  google.accounts.id.renderButton(document.getElementById('gbtn'),{theme:'filled_blue',size:'large',text:'continue_with',locale:'pt-BR'});
+}
+function entrar(){
+  document.getElementById('login').classList.add('hide');
+  document.getElementById('app').classList.remove('hide');
+  uPic.src=user.foto||'';uMail.textContent=user.email;
+  data.value=fmtData(hojeISO());
+  restaurarRascunho();
+}
+function sair(){sessionStorage.removeItem('sessao');if(window.google)google.accounts.id.disableAutoSelect();location.reload()}
+
+function turno(t){
+  turnoAtual=t;
+  document.querySelectorAll('.turnos button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  if(!hIni.value)hIni.value=PADRAO[t][0];
+  if(!hFim.value)hFim.value=PADRAO[t][1];
+  rascunho();
+}
+
+function addIt(dir,val=''){
+  const w=document.createElement('div');w.className='it';
+  w.innerHTML='<input inputmode="decimal" placeholder="0,00"><button title="remover">×</button>';
+  const inp=w.querySelector('input');inp.value=val;
+  inp.oninput=calc;
+  w.querySelector('button').onclick=()=>{w.remove();calc()};
+  document.getElementById('i-'+dir).appendChild(w);
+  if(!val)inp.focus();
+}
+function somaDir(dir){return[...document.querySelectorAll('#i-'+dir+' input')].reduce((a,i)=>a+num(i.value),0)}
+function valores(dir){return[...document.querySelectorAll('#i-'+dir+' input')].map(i=>i.value).filter(v=>v.trim())}
+function calc(){
+  const s={};DIRS.forEach(d=>{s[d]=somaDir(d);document.getElementById('s-'+d).textContent=brl(s[d])});
+  const venda=s.sangria+s.maquina;
+  const total=+(venda-s.relatorio).toFixed(2);
+  vVenda.textContent=brl(venda);
+  vTotal.textContent=(total>0?'+ ':'')+brl(total);
+  const temDados=DIRS.some(d=>valores(d).length);
+  const r=document.getElementById('resultado');
+  if(!temDados){r.className='neu';vStatus.textContent='Aguardando fechamento'}
+  else if(total>=0){r.className='pos';vStatus.textContent=total===0?'POSITIVO — caixa zerado':'POSITIVO — sobra de '+brl(total)}
+  else{r.className='neg';vStatus.textContent='NEGATIVO — falta de '+brl(Math.abs(total))}
+  rascunho();
+  return{...s,venda,total};
+}
+
+function rascunho(){if(!user)return;const r={turno:turnoAtual,hIni:hIni.value,hFim:hFim.value};DIRS.forEach(d=>r[d]=valores(d));localStorage.setItem('rasc_'+user.email,JSON.stringify(r))}
+function restaurarRascunho(){
+  const r=JSON.parse(localStorage.getItem('rasc_'+user.email)||'null');
+  DIRS.forEach(d=>document.getElementById('i-'+d).innerHTML='');
+  hIni.value=r?.hIni||'';hFim.value=r?.hFim||'';
+  if(r?.turno)turno(r.turno);else{turnoAtual=null;document.querySelectorAll('.turnos button').forEach(b=>b.classList.remove('on'))}
+  DIRS.forEach(d=>{const v=r?.[d]||[];if(v.length)v.forEach(x=>addIt(d,x));else addIt(d,'')});
+  document.activeElement.blur();calc();
+}
+function limpar(){if(!confirm('Limpar o caixa atual?'))return;localStorage.removeItem('rasc_'+user.email);restaurarRascunho()}
+hIni.onchange=hFim.onchange=rascunho;
+
+function fechar(){
+  if(!turnoAtual)return alert('Selecione o turno (T1, T2 ou T3).');
+  if(!hIni.value||!hFim.value)return alert('Informe o horário de início e de finalização.');
+  if(!valores('relatorio').length)return alert('Informe o valor do Relatório.');
+  const c=calc(),dia=hojeISO(),d=db();
+  d[dia]=d[dia]||{};
+  if(d[dia][turnoAtual]&&!confirm('O '+turnoAtual+' de hoje já foi fechado. Substituir?'))return;
+  d[dia][turnoAtual]={turno:turnoAtual,hIni:hIni.value,hFim:hFim.value,
+    itens:{sangria:valores('sangria'),maquina:valores('maquina'),relatorio:valores('relatorio')},
+    sangria:c.sangria,maquina:c.maquina,relatorio:c.relatorio,venda:c.venda,total:c.total,
+    status:c.total>=0?'POSITIVO':'NEGATIVO',fechadoEm:new Date().toLocaleString('pt-BR'),operador:user.email};
+  salvarDb(d);
+  localStorage.removeItem('rasc_'+user.email);
+  alert('Caixa '+turnoAtual+' fechado e salvo: '+(c.total>=0?'POSITIVO':'NEGATIVO')+' '+brl(c.total));
+  restaurarRascunho();diaSel=dia;calRef=new Date();aba('cal');
+}
+
+function aba(a){
+  vCaixa.classList.toggle('hide',a!=='caixa');vCal.classList.toggle('hide',a!=='cal');
+  tCaixa.className='btn'+(a==='caixa'?'':' sec');tCal.className='btn'+(a==='cal'?'':' sec');
+  if(a==='cal'){desenharCal();if(diaSel)mostrarDia(diaSel)}
+}
+function mes(n){calRef.setMonth(calRef.getMonth()+n);desenharCal()}
+function desenharCal(){
+  const d=db(),y=calRef.getFullYear(),m=calRef.getMonth();
+  calTit.textContent=calRef.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());
+  let h=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(w=>'<div class="wd">'+w+'</div>').join('');
+  const ini=new Date(y,m,1).getDay(),dias=new Date(y,m+1,0).getDate();
+  for(let i=0;i<ini;i++)h+='<div></div>';
+  for(let i=1;i<=dias;i++){
+    const iso=y+'-'+String(m+1).padStart(2,'0')+'-'+String(i).padStart(2,'0');
+    const cx=d[iso]?Object.values(d[iso]):[];
+    const dots=cx.map(c=>'<i style="background:'+(c.total>=0?'var(--ok)':'var(--bad)')+'"></i>').join('');
+    h+='<div class="d'+(iso===hojeISO()?' today':'')+(iso===diaSel?' sel':'')+'" onclick="mostrarDia(\''+iso+'\')">'+i+'<div class="dot">'+dots+'</div></div>';
+  }
+  cal.innerHTML=h;
+}
+function mostrarDia(iso){
+  diaSel=iso;desenharCal();
+  const cx=db()[iso];diaTit.textContent='Caixas finalizados — '+fmtData(iso);
+  if(!cx){diaLista.innerHTML='<p class="lock">Nenhum caixa finalizado neste dia.</p>';return}
+  diaLista.innerHTML=['T1','T2','T3'].filter(t=>cx[t]).map(t=>{const c=cx[t],cl=c.total>=0?'pos':'neg';
+    return '<div class="hist '+cl+'"><b>'+t+' - '+TURNOS[t]+'</b> <span class="lock">('+c.hIni+' às '+c.hFim+')</span>'+
+    '<table><tr><td>Sangria</td><td>'+brl(c.sangria)+'</td></tr><tr><td>Máquina</td><td>'+brl(c.maquina)+'</td></tr>'+
+    '<tr><td>Venda</td><td>'+brl(c.venda)+'</td></tr><tr><td>Relatório</td><td>'+brl(c.relatorio)+'</td></tr>'+
+    '<tr><td><b>Total</b></td><td style="color:'+(c.total>=0?'#4ade80':'#f87171')+'"><b>'+brl(c.total)+' — '+c.status+'</b></td></tr></table>'+
+    '<div class="lock" style="margin-top:6px">🔒 Fechado em '+c.fechadoEm+' por '+c.operador+'</div></div>'}).join('');
+}
+
+const s=sessionStorage.getItem('sessao');
+if(s){user=JSON.parse(s);entrar()}
+window.addEventListener('load',initGoogle);
+</script>
+</body>
+</html>
